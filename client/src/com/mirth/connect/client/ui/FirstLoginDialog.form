@@ -58,7 +58,6 @@
                       <Component id="jScrollPane1" alignment="0" pref="353" max="32767" attributes="0"/>
                       <Group type="102" alignment="0" attributes="0">
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="registerCheckBox" alignment="0" min="-2" max="-2" attributes="0"/>
                               <Component id="userEditPanel" alignment="0" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace min="0" pref="19" max="32767" attributes="0"/>
@@ -77,8 +76,6 @@
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="userEditPanel" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
-                  <Component id="registerCheckBox" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace max="32767" attributes="0"/>
                   <Component id="jSeparator1" min="-2" max="-2" attributes="0"/>
                   <EmptySpace max="-2" attributes="0"/>
                   <Component id="finishButton" min="-2" max="-2" attributes="0"/>
@@ -159,19 +156,6 @@
             </Component>
           </SubComponents>
         </Container>
-        <Component class="javax.swing.JCheckBox" name="registerCheckBox">
-          <Properties>
-            <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-              <Color blue="ff" green="ff" red="ff" type="rgb"/>
-            </Property>
-            <Property name="selected" type="boolean" value="true"/>
-            <Property name="text" type="java.lang.String" value="Register user with NextGen Healthcare"/>
-            <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;Register your user information with NextGen Healthcare to help us&lt;br&gt;improve the product and provide better service.&lt;/html&gt;"/>
-          </Properties>
-          <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="registerCheckBoxActionPerformed"/>
-          </Events>
-        </Component>
       </SubComponents>
     </Container>
   </SubComponents>

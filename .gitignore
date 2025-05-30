@@ -1,6 +1,8 @@
 
 # /
 
+.DS_Store
+.java-version
 .idea
 **/*.iml
 donkey/donkey-src

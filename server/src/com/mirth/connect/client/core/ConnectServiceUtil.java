@@ -49,43 +49,11 @@ import com.mirth.connect.util.MirthSSLUtil;
 
 public class ConnectServiceUtil {
     private final static String URL_CONNECT_SERVER = "https://connect.mirthcorp.com";
-    private final static String URL_REGISTRATION_SERVLET = "/RegistrationServlet";
-    private final static String URL_USAGE_SERVLET = "/UsageStatisticsServlet";
     private final static String URL_NOTIFICATION_SERVLET = "/NotificationServlet";
     private static String NOTIFICATION_GET = "getNotifications";
     private static String NOTIFICATION_COUNT_GET = "getNotificationCount";
     private final static int TIMEOUT = 10000;
     public final static Integer MILLIS_PER_DAY = 86400000;
-
-    public static void registerUser(String serverId, String mirthVersion, User user, String[] protocols, String[] cipherSuites) throws ClientException {
-        CloseableHttpClient httpClient = null;
-        CloseableHttpResponse httpResponse = null;
-        NameValuePair[] params = { new BasicNameValuePair("serverId", serverId),
-                new BasicNameValuePair("version", mirthVersion),
-                new BasicNameValuePair("user", ObjectXMLSerializer.getInstance().serialize(user)) };
-
-        HttpPost post = new HttpPost();
-        post.setURI(URI.create(URL_CONNECT_SERVER + URL_REGISTRATION_SERVLET));
-        post.setEntity(new UrlEncodedFormEntity(Arrays.asList(params), Charset.forName("UTF-8")));
-        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(TIMEOUT).setConnectionRequestTimeout(TIMEOUT).setSocketTimeout(TIMEOUT).build();
-
-        try {
-            HttpClientContext postContext = HttpClientContext.create();
-            postContext.setRequestConfig(requestConfig);
-            httpClient = getClient(protocols, cipherSuites);
-            httpResponse = httpClient.execute(post, postContext);
-            StatusLine statusLine = httpResponse.getStatusLine();
-            int statusCode = statusLine.getStatusCode();
-            if ((statusCode != HttpStatus.SC_OK) && (statusCode != HttpStatus.SC_MOVED_TEMPORARILY)) {
-                throw new Exception("Failed to connect to update server: " + statusLine);
-            }
-        } catch (Exception e) {
-            throw new ClientException(e);
-        } finally {
-            HttpClientUtils.closeQuietly(httpResponse);
-            HttpClientUtils.closeQuietly(httpClient);
-        }
-    }
 
     public static List<Notification> getNotifications(String serverId, String mirthVersion, Map<String, String> extensionVersions, String[] protocols, String[] cipherSuites) throws Exception {
         CloseableHttpClient client = null;
@@ -193,43 +161,6 @@ public class ConnectServiceUtil {
             HttpClientUtils.closeQuietly(client);
         }
         return notificationCount;
-    }
-
-    public static boolean sendStatistics(String serverId, String mirthVersion, boolean server, String data, String[] protocols, String[] cipherSuites) {
-        if (data == null) {
-            return false;
-        }
-
-        boolean isSent = false;
-
-        CloseableHttpClient client = null;
-        HttpPost post = new HttpPost();
-        CloseableHttpResponse response = null;
-        NameValuePair[] params = { new BasicNameValuePair("serverId", serverId),
-                new BasicNameValuePair("version", mirthVersion),
-                new BasicNameValuePair("server", Boolean.toString(server)),
-                new BasicNameValuePair("data", data) };
-        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(TIMEOUT).setConnectionRequestTimeout(TIMEOUT).setSocketTimeout(TIMEOUT).build();
-
-        post.setURI(URI.create(URL_CONNECT_SERVER + URL_USAGE_SERVLET));
-        post.setEntity(new UrlEncodedFormEntity(Arrays.asList(params), Charset.forName("UTF-8")));
-
-        try {
-            HttpClientContext postContext = HttpClientContext.create();
-            postContext.setRequestConfig(requestConfig);
-            client = getClient(protocols, cipherSuites);
-            response = client.execute(post, postContext);
-            StatusLine statusLine = response.getStatusLine();
-            int statusCode = statusLine.getStatusCode();
-            if ((statusCode == HttpStatus.SC_OK)) {
-                isSent = true;
-            }
-        } catch (Exception e) {
-        } finally {
-            HttpClientUtils.closeQuietly(response);
-            HttpClientUtils.closeQuietly(client);
-        }
-        return isSent;
     }
 
     private static CloseableHttpClient getClient(String[] protocols, String[] cipherSuites) {

@@ -399,10 +399,6 @@ public class Mirth extends Thread {
         configurationController.setStatus(ConfigurationController.STATUS_OK);
         eventController.dispatchEvent(new ServerEvent(configurationController.getServerId(), "Server startup complete"));
         printSplashScreen();
-
-        // schedule usage statistics to be sent at startup and every 24 hours
-        Timer timer = new Timer();
-        timer.schedule(new UsageSenderTask(), 0, ConnectServiceUtil.MILLIS_PER_DAY);
     }
 
     /**
@@ -646,21 +642,6 @@ public class Mirth extends Thread {
             for (Appender appender : ((org.apache.logging.log4j.core.Logger) rootLogger).getAppenders().values()) {
                 if (appender instanceof Filterable) {
                     ((Filterable) appender).addFilter(new MirthLog4jFilter());
-                }
-            }
-        }
-    }
-
-    private class UsageSenderTask extends TimerTask {
-        @Override
-        public void run() {
-            boolean isSent = ConnectServiceUtil.sendStatistics(configurationController.getServerId(), configurationController.getServerVersion(), true, usageController.createUsageStats(null), configurationController.getHttpsClientProtocols(), configurationController.getHttpsCipherSuites());
-            if (isSent) {
-                UpdateSettings settings = new UpdateSettings();
-                settings.setLastStatsTime(System.currentTimeMillis());
-                try {
-                    configurationController.setUpdateSettings(settings);
-                } catch (ControllerException e) {
                 }
             }
         }

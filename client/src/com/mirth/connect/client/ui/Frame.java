@@ -79,6 +79,7 @@ import javax.swing.border.LineBorder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.conn.HttpHostConnectException;
@@ -1946,68 +1947,6 @@ public class Frame extends JXFrame {
         }
 
         return currentUser;
-    }
-
-    public void registerUser(final User user) {
-        final String workingId = startWorking("Registering user...");
-
-        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-
-            public Void doInBackground() {
-                try {
-                    ConnectServiceUtil.registerUser(PlatformUI.SERVER_ID, PlatformUI.SERVER_VERSION, user, PlatformUI.HTTPS_PROTOCOLS, PlatformUI.HTTPS_CIPHER_SUITES);
-                } catch (ClientException e) {
-                    // ignore errors connecting to update/stats server
-                }
-
-                return null;
-            }
-
-            public void done() {
-                stopWorking(workingId);
-            }
-        };
-
-        worker.execute();
-    }
-
-    public void sendUsageStatistics() {
-        UpdateSettings updateSettings = null;
-        try {
-            updateSettings = mirthClient.getUpdateSettings();
-        } catch (Exception e) {
-        }
-
-        if (updateSettings != null && updateSettings.getStatsEnabled()) {
-            final String workingId = startWorking("Sending usage statistics...");
-
-            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
-
-                public Void doInBackground() {
-                    try {
-                        String usageData = mirthClient.getUsageData(getClientStats());
-                        if (usageData != null) {
-                            boolean isSent = ConnectServiceUtil.sendStatistics(PlatformUI.SERVER_ID, PlatformUI.SERVER_VERSION, false, usageData, PlatformUI.HTTPS_PROTOCOLS, PlatformUI.HTTPS_CIPHER_SUITES);
-                            if (isSent) {
-                                UpdateSettings settings = new UpdateSettings();
-                                settings.setLastStatsTime(System.currentTimeMillis());
-                                mirthClient.setUpdateSettings(settings);
-                            }
-                        }
-                    } catch (ClientException e) {
-                        // ignore errors connecting to update/stats server
-                    }
-
-                    return null;
-                }
-
-                public void done() {
-                    stopWorking(workingId);
-                }
-            };
-
-            worker.execute();
-        }
     }
 
     private Map<String, Object> getClientStats() {

@@ -631,8 +631,6 @@ public class LoginPanel extends javax.swing.JFrame {
                     PlatformUI.MIRTH_FRAME.alertThrowable(PlatformUI.MIRTH_FRAME, e);
                 }
 
-                PlatformUI.MIRTH_FRAME.sendUsageStatistics();
-                
                 return true;
             }
 

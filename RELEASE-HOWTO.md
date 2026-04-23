@@ -20,7 +20,7 @@ These tasks are ordered. They support the direction of the maintainers and steer
 
 ### Update Version Numbers
 
-Edit the version number in [mirth-build.properties](server/mirth-build.properties) to indicate the release version.
+Edit the version number in several files to indicate the release version. Follow (this PR)[https://github.com/OpenIntegrationEngine/engine/pull/301] as a guide.
 
 Execute an automated build and verify that the version is correctly populated. It will appear in various properties and XML files for the application. The old version should be replaced.
 

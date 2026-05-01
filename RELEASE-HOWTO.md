@@ -50,6 +50,45 @@ Showstopping bugs should be recorded as issues in the current release milestone 
 
 Bug reports that are not showstoppers should be recorded and planned following our typical processes.
 
+Ask for volunteers to test some common paths and combinations for OIE.
+
+OS and DB combinations:
+
+|OS|DB|
+|---|---|
+|Windows|Postgres|
+|Windows|MS SQL|
+|Windows|Oracle|
+|Windows|MySQL/Maria|
+|Windows|Derby|
+|Mac|Postgres|
+|Mac|MS SQL|
+|Mac|Oracle|
+|Mac|MySQL/Maria|
+|Mac|Derby|
+|Linux|Postgres|
+|Linux|MS SQL|
+|Linux|Oracle|
+|Linux|MySQL/Maria|
+|Linux|Derby|
+
+Install and Upgrade paths:
+
+|OS|Installer|New Install or Upgrade|
+|---|---|---|
+|Windows|EXE|New|
+|Windows|EXE|Upgrade|
+|Windows|TAR|New|
+|Windows|TAR|Upgrade|
+|Mac|EXE|New|
+|Mac|EXE|Upgrade|
+|Mac|TAR|New|
+|Mac|TAR|Upgrade|
+|Linux|EXE|New|
+|Linux|EXE|Upgrade|
+|Linux|TAR|New|
+|Linux|TAR|Upgrade|
+
 ### Publish Installer and Artifacts for Final Release
 
 Generate the installer and build artifacts for the final release following the same version update, build, and signing process. 

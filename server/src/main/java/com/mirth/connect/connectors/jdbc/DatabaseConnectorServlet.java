@@ -33,6 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.mirth.connect.client.core.api.MirthApiException;
+import com.mirth.connect.model.DriverInfo;
 import com.mirth.connect.server.api.MirthServlet;
 import com.mirth.connect.server.controllers.ContextFactoryController;
 import com.mirth.connect.server.controllers.ControllerFactory;
@@ -52,6 +53,13 @@ public class DatabaseConnectorServlet extends MirthServlet implements DatabaseCo
 
     @Override
     public SortedSet<Table> getTables(String channelId, String channelName, String driver, String url, String username, String password, Set<String> tableNamePatterns, String selectLimit, Set<String> resourceIds) {
+        // selectLimit is a driver-specific, server-owned metadata-probe template, not a caller input.
+        // The caller-supplied value is ignored and the template is resolved from the built-in driver
+        // list keyed by the JDBC driver class; anything unrecognised uses the safe
+        // DatabaseMetaData.getColumns() path. This removes the SQL-injection surface (CVE-2026-82583)
+        // without depending on any API-writable configuration.
+        String resolvedSelectLimit = resolveSelectLimit(driver);
+
         CustomDriver customDriver = null;
         Connection connection = null;
         try {
@@ -150,9 +158,11 @@ public class DatabaseConnectorServlet extends MirthServlet implements DatabaseCo
                     // then we'll define to the generic method of getting column information, but
                     // this could be extremely slow
                     List<Column> columnList = new ArrayList<Column>();
-                    if (StringUtils.isEmpty(selectLimit)) {
+                    if (StringUtils.isEmpty(resolvedSelectLimit)) {
                         logger.debug("No select limit is defined, using generic method");
-                        rs = dbMetaData.getColumns(null, null, tableName, null);
+                        // Scope to the discovered schema (may be null) so a same-named table in
+                        // another schema does not leak its columns into the result.
+                        rs = dbMetaData.getColumns(null, schema, tableName, null);
 
                         // retrieve all relevant column information                         
                         for (int i = 0; rs.next(); i++) {
@@ -160,12 +170,12 @@ public class DatabaseConnectorServlet extends MirthServlet implements DatabaseCo
                             columnList.add(column);
                         }
                     } else {
-                        logger.debug("Select limit is defined, using specific select query : '" + selectLimit + "'");
+                        logger.debug("Select limit is defined, using specific select query : '" + resolvedSelectLimit + "'");
 
-                        // replace the '?' with the appropriate schema.table name, and use ResultSetMetaData to 
-                        // retrieve column information 
-                        final String schemaTableName = StringUtils.isNotEmpty(schema) ? "\"" + schema + "\".\"" + tableName + "\"" : "\"" + tableName + "\"";
-                        final String queryString = selectLimit.trim().replaceAll("\\?", Matcher.quoteReplacement(schemaTableName));
+                        // replace the '?' with the appropriate schema.table name, and use ResultSetMetaData to
+                        // retrieve column information
+                        final String schemaTableName = quoteSchemaTable(schema, tableName);
+                        final String queryString = resolvedSelectLimit.trim().replaceAll("\\?", Matcher.quoteReplacement(schemaTableName));
                         Statement statement = connection.createStatement();
                         try {
                             rs = statement.executeQuery(queryString);
@@ -192,7 +202,7 @@ public class DatabaseConnectorServlet extends MirthServlet implements DatabaseCo
                             columnList = new ArrayList<Column>();
 
                             logger.debug("Using fallback method for retrieving columns");
-                            backupRs = dbMetaData.getColumns(null, null, tableName.replace("/", "//"), null);
+                            backupRs = dbMetaData.getColumns(null, schema, tableName.replace("/", "//"), null);
 
                             // retrieve all relevant column information                         
                             while (backupRs.next()) {
@@ -227,6 +237,50 @@ public class DatabaseConnectorServlet extends MirthServlet implements DatabaseCo
                 }
             }
         }
+    }
+
+    /**
+     * Resolves the driver-specific metadata-probe query from the built-in driver definitions, keyed
+     * by the JDBC driver class (including known alternative class names). Returns {@code ""} - the
+     * safe {@link DatabaseMetaData#getColumns} path - for anything not built in.
+     * <p>
+     * The caller-supplied {@code selectLimit} query parameter is deliberately ignored: it is executed
+     * as SQL (CVE-2026-82583), and the metadata dialog only ever sends the driver's own template
+     * anyway. This method consults only {@link DriverInfo#getDefaultDrivers()}, never the
+     * API-writable configured driver list, so a caller cannot introduce an arbitrary query even by
+     * first writing it to the driver configuration. Package-private and static so it is unit-testable
+     * without a servlet instance or a live server.
+     */
+    static String resolveSelectLimit(String driver) {
+        if (StringUtils.isBlank(driver)) {
+            return "";
+        }
+
+        for (DriverInfo driverInfo : DriverInfo.getDefaultDrivers()) {
+            if (driver.equals(driverInfo.getClassName())
+                    || (driverInfo.getAlternativeClassNames() != null && driverInfo.getAlternativeClassNames().contains(driver))) {
+                return StringUtils.defaultString(driverInfo.getSelectLimit());
+            }
+        }
+
+        return "";
+    }
+
+    /**
+     * Builds the {@code "schema"."table"} (or {@code "table"}) identifier that replaces the {@code ?}
+     * placeholder in the metadata-probe query. The schema and table names come from the database's own
+     * metadata ({@link DatabaseMetaData#getSchemas}/{@link DatabaseMetaData#getTables}), but a name may
+     * still contain a double quote; embedding it verbatim would break out of the quoting and alter the
+     * query (a second-order SQL injection). Following the SQL standard, any embedded {@code "} is
+     * doubled so the value is always a single quoted identifier. Package-private and static so it is
+     * unit-testable without a live database.
+     */
+    static String quoteSchemaTable(String schema, String tableName) {
+        String quotedTable = "\"" + StringUtils.defaultString(tableName).replace("\"", "\"\"") + "\"";
+        if (StringUtils.isNotEmpty(schema)) {
+            return "\"" + schema.replace("\"", "\"\"") + "\"." + quotedTable;
+        }
+        return quotedTable;
     }
 
     /**

@@ -66,6 +66,19 @@ public class XsltStep extends Step implements FilterTransformerIterable<Step> {
             script.append("tFactory = Packages.javax.xml.transform.TransformerFactory.newInstance();\n");
         }
 
+        // Harden the factory against XXE (CVE-2026-78224). The source XML is attacker-controlled, so
+        // ACCESS_EXTERNAL_DTD is set to '' to deny external DTDs/entities in it outright -- this is
+        // what closes the CVE. The stylesheet is channel-author content; per the OWASP XXE cheat
+        // sheet ("restrict rather than close" external references in your own stylesheets),
+        // ACCESS_EXTERNAL_STYLESHEET is restricted to the 'file' protocol rather than blocked, so
+        // local xsl:import/xsl:include/document() keep working while http(s) SSRF is denied. Neither
+        // is swallowed: if a configured factory rejects an attribute the transform fails rather than
+        // running with external access silently left open. FEATURE_SECURE_PROCESSING is deliberately
+        // NOT enabled: on the JDK's built-in Xalan it also disables Java extension functions, which
+        // would break existing stylesheets that call Java.
+        script.append("tFactory.setAttribute(Packages.javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD, '');\n");
+        script.append("tFactory.setAttribute(Packages.javax.xml.XMLConstants.ACCESS_EXTERNAL_STYLESHEET, 'file');\n");
+
         script.append("xsltTemplate = new Packages.java.io.StringReader(" + template + ");\n");
         script.append("transformer = tFactory.newTransformer(new Packages.javax.xml.transform.stream.StreamSource(xsltTemplate));\n");
         script.append("sourceVar = new Packages.java.io.StringReader(" + sourceXml + ");\n");

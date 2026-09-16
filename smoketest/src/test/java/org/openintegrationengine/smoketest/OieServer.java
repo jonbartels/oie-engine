@@ -89,6 +89,15 @@ final class OieServer implements AutoCloseable {
      */
     String deployChannel(String xml, String label) throws Exception {
         Channel channel = ObjectXMLSerializer.getInstance().deserialize(xml, Channel.class);
+        return deployChannel(channel, label);
+    }
+
+    /**
+     * Deploys a {@link Channel} built in code (used by the security tests that construct XSLT-step
+     * and XML-batch channels from a base fixture) and waits for it to reach
+     * {@link DeployedState#STARTED}.
+     */
+    String deployChannel(Channel channel, String label) throws Exception {
         String channelId = channel.getId();
         if (channelId == null || channelId.isBlank()) {
             throw new IllegalArgumentException("Channel fixture has no id: " + label);
@@ -130,6 +139,11 @@ final class OieServer implements AutoCloseable {
             throw new AssertionError("Server returned no message id for channel " + channelId);
         }
         return messageId;
+    }
+
+    /** Returns up to {@code limit} of the most recent messages on a channel, with content. */
+    List<Message> getMessages(String channelId, int limit) throws ClientException {
+        return client.getMessages(channelId, new MessageFilter(), true, 0, limit);
     }
 
     /** Reads one message back, with content, so assertions can inspect every connector. */

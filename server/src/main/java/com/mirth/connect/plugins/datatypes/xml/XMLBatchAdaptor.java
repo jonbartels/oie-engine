@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -33,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -42,6 +44,7 @@ import com.mirth.connect.donkey.server.channel.SourceConnector;
 import com.mirth.connect.donkey.server.message.batch.BatchMessageException;
 import com.mirth.connect.donkey.server.message.batch.BatchMessageReader;
 import com.mirth.connect.donkey.server.message.batch.BatchMessageReceiver;
+import com.mirth.connect.model.converters.DocumentSerializer;
 import com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties.SplitType;
 import com.mirth.connect.server.controllers.ContextFactoryController;
 import com.mirth.connect.server.controllers.ControllerFactory;
@@ -127,7 +130,9 @@ public class XMLBatchAdaptor extends DebuggableBatchAdaptor  {
 
                 XPath xpath = xPathFactory.newXPath();
 
-                nodeList = (NodeList) xpath.evaluate(query.toString(), new InputSource(bufferedReader), XPathConstants.NODESET);
+                Document document = parseBatchSecurely(new InputSource(bufferedReader));
+
+                nodeList = (NodeList) xpath.evaluate(query.toString(), document, XPathConstants.NODESET);
             }
 
             if (currentNode < nodeList.getLength()) {
@@ -185,6 +190,27 @@ public class XMLBatchAdaptor extends DebuggableBatchAdaptor  {
         }
 
         return null;
+    }
+
+    /**
+     * Parses an untrusted batch document with a hardened parser before any XPath evaluation, rather
+     * than letting {@code XPath.evaluate(InputSource)} build its own DOCTYPE-resolving parser (XXE,
+     * CVE-2026-82578). {@link DocumentSerializer#getSecureDocumentBuilderFactory()} already sets
+     * {@code disallow-doctype-decl} (so any DOCTYPE is rejected outright); the extra features below
+     * block external entities/DTDs and entity expansion as defense in depth. Namespace-awareness is
+     * enabled to match the previous {@code XPath.evaluate(InputSource)} path, so namespace-sensitive
+     * split queries ({@code namespace-uri()}/prefixes) behave as before. Package-private and static so
+     * the parser hardening is unit-testable without constructing a full adaptor.
+     */
+    static Document parseBatchSecurely(InputSource source) throws Exception {
+        DocumentBuilderFactory dbf = DocumentSerializer.getSecureDocumentBuilderFactory();
+        dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        dbf.setXIncludeAware(false);
+        dbf.setExpandEntityReferences(false);
+        dbf.setNamespaceAware(true);
+        return dbf.newDocumentBuilder().parse(source);
     }
 
     private String toXML(Node node) throws Exception {

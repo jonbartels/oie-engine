@@ -15,6 +15,11 @@ dependencies {
     testCompileOnly files(clientCoreJar)
     // RawMessage, Message, ConnectorMessage, MessageContent, Status, DeployedState
     testCompileOnly files(donkeyModelJar)
+    // Connector/plugin classes the security tests build channels with and call directly
+    // (DatabaseConnectorServletInterface, Table, XsltStep, XMLDataTypeProperties,
+    // VmReceiverProperties, ...). These live in the server module's main output and are present at
+    // runtime via /opt/engine/extensions; needed only to compile the tests, hence compileOnly.
+    testCompileOnly project(':server').sourceSets.main.output
     // Provided at runtime by /opt/engine/server-lib (server-main uses it too).
     testCompileOnly libs.snakeyaml
 

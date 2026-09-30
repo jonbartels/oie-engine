@@ -7,16 +7,23 @@ This document is primarily meant to be referenced by OIE maintainers. This docum
 ## Task Overview
 
 These are the tasks to perform a release:
-1. Update version numbers
-2. Build the installer
-3. Sign the installer
-4. Release the installer and artifacts as RC
-5. Fix showstopping bugs. Log all others.
+1. Generate Release Notes
+2. Update version numbers
+3. Build the installer
+4. Sign the installer
+5. Release the installer and artifacts as RC
+6. Fix showstopping bugs. Log all others.
 5. Release the installer and artifacts as a final release
 
 These tasks are ordered. They support the direction of the maintainers and steering committee to release regularly.
 
 ## Task Details
+
+## Generate Release Notes
+
+Release notes can be generated from PRs and commit messages.
+
+Ensure that Release Notes explicitly list patched CVEs in the typical CVE format, eg CVE-YEAR-NUMBER.
 
 ### Update Version Numbers
 

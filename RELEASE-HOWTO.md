@@ -10,9 +10,10 @@ These are the tasks to perform a release:
 1. Generate Release Notes
 2. Update version numbers
 3. Build the installer
-4. Sign the installer
-5. Release the installer and artifacts as RC
-6. Fix showstopping bugs. Log all others.
+4. Submit PR with any install4j changes 
+5. Sign the installer
+6. Release the installer and artifacts as RC
+7. Fix showstopping bugs. Log all others.
 5. Release the installer and artifacts as a final release
 
 These tasks are ordered. They support the direction of the maintainers and steering committee to release regularly.
@@ -38,6 +39,10 @@ You will need Install4J installed. OIE has an Install4J license available for ma
 Review the [Install4J specific readme.](tools/install4j/readme.html)
 
 Run Install4J and load the [Install4J configuration for OIE](tools/install4j/oie-installer-config.install4j)
+
+### Submit PR with any install4j changes 
+
+This PR should review the bundled Java version, min/max versions.
 
 ### Sign The Installer
 
